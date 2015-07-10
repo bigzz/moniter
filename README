@@ -11,7 +11,7 @@ freq_big_path=/sys/devices/system/cpu/cpu4/cpufreq/scaling_cur_freq
 load_little_path=/sys/bus/cpu/devices/cpu0/cpufreq/interactive/cpu_util
 load_big_path=/sys/bus/cpu/devices/cpu4/cpufreq/interactive/cpu_util
 
-#GPU
+# GPU
 power_gpu_path=/sys/bus/platform/devices/14ac0000.mali/power_state
 freq_gpu_path=/sys/bus/platform/devices/14ac0000.mali/clock
 load_gpu_path=/sys/bus/platform/devices/14ac0000.mali/utilization
@@ -49,4 +49,4 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> adb.get_version()
 '1.0.32'
 >>> 
->>> quit(
+>>> quit()
