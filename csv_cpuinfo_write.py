@@ -7,6 +7,8 @@ import string
 import re
 import time
 import thread
+#import matplotlib.pyplot as plt
+import pylab as pl
 
 online_cpu_path='/sys/devices/system/cpu/online'
 
@@ -110,23 +112,42 @@ class cpuinfo:
         cpucsv = open(self.cpufile, 'aw+')
 
 
-def timer(cpu, times, interval):
+def timer(cpu, times = 0 , interval = 1):
     cnt = 0
-    while cnt < times:
-        # print 'Thread:(%s) Time:%s/n'%(cnt, time.ctime())
-        time.sleep(interval)
-        cpu.update()
-        cnt += 1
-    thread.exit_thread()
-
+    if times:
+        while cnt < times:
+            # print 'Thread:(%s) Time:%s/n'%(cnt, time.ctime())
+            time.sleep(interval)
+            cpu.update()
+        thread.exit_thread()
+    else:
+        while True:
+            cpu.update()
+        thread.exit_thread()
 
 def update_thread(cpu):
     thread.start_new_thread(timer, (cpu, 100, 1))
 
 
+
+def mulitplot_pic():
+    x1 = [1, 2, 3, 4, 5]
+    y1 = [1, 4, 9, 16, 25]
+    x2 = [1, 2, 4, 6, 8]
+    y2 = [2, 4, 8, 12, 16]
+    pl.plot(x1, y1, 'r')
+    pl.plot(x2, y2, 'g')
+    pl.title('Plot of y vs. x')
+    pl.xlabel('x axis')
+    pl.ylabel('y axis')
+    pl.xlim(0.0, 9.0)
+    pl.ylim(0.0, 30.)
+    pl.show()
+
 def main():
     cpuin = cpuinfo(20)
     update_thread(cpuin)
+    mulitplot_pic()
     time.sleep(10000)
 
 
