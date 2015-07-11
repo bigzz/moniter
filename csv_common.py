@@ -2,19 +2,10 @@ __author__ = 'bigzhang'
 
 import csv
 
-
-online = [6]
-cpufreq = [800000, 1200000]
-cpuload_l = [100, 100, 100, 0]
-cpuload_b = [100, 100, 100, 0]
-
-cpuinfo = [online, cpufreq, cpuload_l, cpuload_b]
-
-
-def csv_write_cpuinfo(cpuinfo):
-    cpucsv = open('cpuinfo.csv', 'aw+')
+def csv_write(func, file, data):
+    cpucsv = open(file, 'aw+')
     csvfile = csv.writer(cpucsv)
-    csvfile.writerows(cpuinfo)
+    csvfile.writerows(data)
     cpucsv.close()
 
 

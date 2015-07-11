@@ -46,13 +46,16 @@ def main():
     adb = ADB()
     # set ADB path
     adb.set_adb_path('/home/bigzhang/Android/Sdk/platform-tools/adb')
-    get_online_cpu(adb)
 
-    get_frqe_little(adb)
-    get_load_little(adb)
+    online = get_online_cpu(adb)
 
-    get_freq_big(adb)
-    get_load_big(adb)
+    cpufreq_l = get_frqe_little(adb)
+    cpufreq_b = get_load_little(adb)
+
+    cpuload_l = get_freq_big(adb)
+    cpuload_b = get_load_big(adb)
+
+
 
 if __name__ == "__main__":
     main()
