@@ -4,14 +4,12 @@ __author__ = 'bigzhang'
 
 import csv_common
 from pyadb import ADB
-import Queue
 import string
 import re
 import time
 import thread
-#import matplotlib.pyplot as plt
-import pylab as pl
-from matplotlib import animation
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 online_cpu_path='/sys/devices/system/cpu/online'
 
@@ -24,22 +22,22 @@ load_big_path='/sys/bus/cpu/devices/cpu4/cpufreq/interactive/cpu_util'
 # CPU Info
 class cpuinfo:
     cpufile = 'cpuinfo.csv'
-
+    maxnum = 40
     online = 0
-    freq_l = [0]
-    freq_b = [0]
+    freq_l = [0] * maxnum
+    freq_b = [0] * maxnum
 
     load_l = []
-    load_l0 = [0] * 20
-    load_l1 = [0] * 20
-    load_l2 = [0] * 20
-    load_l3 = [0] * 20
+    load_l0 = [0] * maxnum
+    load_l1 = [0] * maxnum
+    load_l2 = [0] * maxnum
+    load_l3 = [0] * maxnum
 
     load_b = []
-    load_b4 = [0] * 20
-    load_b5 = [0] * 20
-    load_b6 = [0] * 20
-    load_b7 = [0] * 20
+    load_b4 = [0] * maxnum
+    load_b5 = [0] * maxnum
+    load_b6 = [0] * maxnum
+    load_b7 = [0] * maxnum
 
     adb = ADB()
     adb.set_adb_path('/home/bigzhang/Android/Sdk/platform-tools/adb')
@@ -80,7 +78,7 @@ class cpuinfo:
         if freq_b:
             return map(int, freq_b)
         else:
-            return 0
+            return [0]
 
     def get_load_big(self):
         load_big_cmd = 'cat ' + load_big_path
@@ -97,13 +95,13 @@ class cpuinfo:
         self.online = self.get_online_cpu()
 
         # Process Little CPU Freq List
-        if len(self.freq_l) >= 20:
+        if len(self.freq_l) >= self.maxnum:
             self.freq_l.pop(0)
-        self.freq_l.append(self.get_freq_little())
+        self.freq_l.append(self.get_freq_little()[0])
 
         # Process Little CPU Load List
         self.load_l = self.get_load_little()
-        if len(self.load_l0) >= 20:
+        if len(self.load_l0) >= self.maxnum:
             self.load_l0.pop(0)
             self.load_l1.pop(0)
             self.load_l2.pop(0)
@@ -116,13 +114,13 @@ class cpuinfo:
 
         if(self.online > 3 ):
             # Process Big CPU Freq List
-            if len(self.freq_b) >= 20:
+            if len(self.freq_b) >= self.maxnum:
                 self.freq_b.pop(0)
-            self.freq_b.append(self.get_freq_big())
+            self.freq_b.append(self.get_freq_big()[0])
 
             # Process B CPU Load List
             self.load_b = self.get_load_big()
-            if len(self.load_b4) >= 20:
+            if len(self.load_b4) >= self.maxnum:
                 self.load_b4.pop(0)
                 self.load_b5.pop(0)
                 self.load_b6.pop(0)
@@ -132,9 +130,12 @@ class cpuinfo:
             self.load_b6.append(self.load_b[2])
             self.load_b7.append(self.load_b[3])
         else:
+            if len(self.freq_b) >= self.maxnum:
+                self.freq_b.pop(0)
             self.freq_b.append(0)
+
             self.load_b = [0, 0, 0, 0]
-            if len(self.load_b4) >= 20:
+            if len(self.load_b4) >= self.maxnum:
                 self.load_b4.pop(0)
                 self.load_b5.pop(0)
                 self.load_b6.pop(0)
@@ -159,9 +160,10 @@ class cpuinfo:
 
 cpuinfo_g = 0 #save cpuinfo
 
-fig = pl.figure()
-ax1 = fig.add_subplot(2,1,1,xlim=(0, 20), ylim=(0, 100))
-ax2 = fig.add_subplot(2,1,2,xlim=(0, 20), ylim=(0, 100))
+fig = plt.figure()
+ax1 = fig.add_subplot(2, 1, 1, xlim=(0, 40), ylim=(0, 100))
+ax2 = fig.add_subplot(2, 1, 2, xlim=(0, 40), ylim=(0, 2500000))
+
 load_l0, = ax1.plot([], [], lw=2)
 load_l1, = ax1.plot([], [], lw=2)
 load_l2, = ax1.plot([], [], lw=2)
@@ -172,16 +174,27 @@ load_b5, = ax1.plot([], [], lw=2)
 load_b6, = ax1.plot([], [], lw=2)
 load_b7, = ax1.plot([], [], lw=2)
 
+freq_l, = ax2.plot([], [], lw=2)
+freq_b, = ax2.plot([], [], lw=2)
+
 def init():
     load_l0.set_data([], [])
     load_l1.set_data([], [])
     load_l2.set_data([], [])
     load_l3.set_data([], [])
-    return load_l0, load_l1, load_l2, load_l3
 
-# animation function.  this is called sequentially
+    load_b4.set_data([], [])
+    load_b5.set_data([], [])
+    load_b6.set_data([], [])
+    load_b7.set_data([], [])
+
+    freq_l.set_data([], [])
+    freq_b.set_data([], [])
+
+    return load_l0, load_l1, load_l2, load_l3, load_b4, load_b5, load_b6, load_b7, freq_l, freq_b
+
 def animate(cpu):
-    x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    x = range(40)
     cpuinfo_g = cpuinfo()
     load_l0.set_data(x, cpuinfo_g.load_l0)
     load_l1.set_data(x, cpuinfo_g.load_l1)
@@ -192,29 +205,15 @@ def animate(cpu):
     load_b5.set_data(x, cpuinfo_g.load_b5)
     load_b6.set_data(x, cpuinfo_g.load_b6)
     load_b7.set_data(x, cpuinfo_g.load_b7)
-    return load_l0, load_l1, load_l2, load_l3, load_b4, load_b5, load_b6, load_b7
 
-def load_show(cpu, interval=1):
-    """
-    x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-    pl.plot(x, cpu.load_l0, 'r')
-    pl.plot(x, cpu.load_l1, 'r')
-    pl.plot(x, cpu.load_l2, 'r')
-    pl.plot(x, cpu.load_l3, 'r')
+    freq_l.set_data(x, cpuinfo_g.freq_l)
+    freq_b.set_data(x, cpuinfo_g.freq_b)
 
-    pl.plot(x, cpu.load_b4, 'g')
-    pl.plot(x, cpu.load_b5, 'g')
-    pl.plot(x, cpu.load_b6, 'g')
-    pl.plot(x, cpu.load_b7, 'g')
+    return load_l0, load_l1, load_l2, load_l3, load_b4, load_b5, load_b6, load_b7, freq_l, freq_b
 
-    pl.title('CPU Load Info')
-    pl.xlabel('Time')
-    pl.ylabel('Load')
-    pl.xlim(0.0, 20.0)
-    pl.ylim(0.0, 100.0)
-    """
-    anim1 = animation.FuncAnimation(fig, animate, init_func=init, frames=50, interval=0.1)
-    pl.show()
+def load_show():
+    am = animation.FuncAnimation(fig, animate, init_func=init, frames=50, interval=1/100)
+    plt.show()
 
 
 def timer(cpu, times=0, interval=1):
@@ -232,17 +231,16 @@ def timer(cpu, times=0, interval=1):
         thread.exit_thread()
 
 def update_thread(cpu):
-    thread.start_new_thread(timer, (cpu, 100, 0.1))
-    thread.start_new_thread(load_show, (cpu, 0.1))
+    thread.start_new_thread(timer, (cpu, 100, 1/100))
+    #thread.start_new_thread(load_show, (cpu, 1))
 
 
 def main():
     cpuin = cpuinfo()
-    cpuinfo_g = cpuin
     update_thread(cpuin)
-    while True:
-        load_show(cpuin)
-        time.sleep(1)
+    load_show()
+
+    time.sleep(1000)
 
 if __name__ == "__main__":
     main()
