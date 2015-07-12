@@ -7,7 +7,7 @@ from pyadb import ADB
 import string
 import re
 import time
-import thread
+import threading
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -154,11 +154,14 @@ def init():
 def animate(cpu):
     x = range(50)
     cpuinfo_g = cpuinfo()
+
+    cpulock.acquire()
     load_sum_l.set_data(x, cpuinfo_g.load_sum_l)
     load_sum_b.set_data(x, cpuinfo_g.load_sum_b)
 
     freq_l.set_data(x, cpuinfo_g.freq_l)
     freq_b.set_data(x, cpuinfo_g.freq_b)
+    cpulock.release()
 
     return load_sum_l, load_sum_b, freq_l, freq_b
 
@@ -166,32 +169,28 @@ def load_show():
     am = animation.FuncAnimation(fig, animate, init_func=init, frames=50, interval=1/100)
     plt.show()
 
+cpulock = threading.RLock()
 
-def timer(cpu, times=0, interval=1):
-    cnt = 0
-    if times:
-        while cnt < times:
-            # print 'Thread:(%s) Time:%s/n'%(cnt, time.ctime())
-            time.sleep(interval)
-            cpu.update()
-        thread.exit_thread()
-    else:
+class update_thread(threading.Thread):
+    def __init__(self, cpu, interval):
+        threading.Thread.__init__(self)
+        self.cpuinf = cpu
+        self.interval = interval
+    def run(self):
         while True:
-            time.sleep(interval)
-            cpu.update()
-        thread.exit_thread()
-
-def update_thread(cpu):
-    thread.start_new_thread(timer, (cpu, 100, 1/100))
-    #thread.start_new_thread(load_show, (cpu, 1))
-
+            time.sleep(self.interval)
+            cpulock.acquire()
+            self.cpuinf.update()
+            cpulock.release()
 
 def main():
     cpuin = cpuinfo()
-    update_thread(cpuin)
+    update = update_thread(cpuin, 1)
+    update.start()
+
     load_show()
 
-    time.sleep(1000)
+    time.sleep(100)
 
 if __name__ == "__main__":
     main()
