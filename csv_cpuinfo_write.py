@@ -22,22 +22,15 @@ load_big_path='/sys/bus/cpu/devices/cpu4/cpufreq/interactive/cpu_util'
 # CPU Info
 class cpuinfo:
     cpufile = 'cpuinfo.csv'
-    maxnum = 40
+    maxnum = 50
     online = 0
     freq_l = [0] * maxnum
     freq_b = [0] * maxnum
 
     load_l = []
-    load_l0 = [0] * maxnum
-    load_l1 = [0] * maxnum
-    load_l2 = [0] * maxnum
-    load_l3 = [0] * maxnum
-
     load_b = []
-    load_b4 = [0] * maxnum
-    load_b5 = [0] * maxnum
-    load_b6 = [0] * maxnum
-    load_b7 = [0] * maxnum
+    load_sum_l = [0] * maxnum
+    load_sum_b = [0] * maxnum
 
     adb = ADB()
     adb.set_adb_path('/home/bigzhang/Android/Sdk/platform-tools/adb')
@@ -101,16 +94,9 @@ class cpuinfo:
 
         # Process Little CPU Load List
         self.load_l = self.get_load_little()
-        if len(self.load_l0) >= self.maxnum:
-            self.load_l0.pop(0)
-            self.load_l1.pop(0)
-            self.load_l2.pop(0)
-            self.load_l3.pop(0)
-        self.load_l0.append(self.load_l[0])
-        self.load_l1.append(self.load_l[1])
-        self.load_l2.append(self.load_l[2])
-        self.load_l3.append(self.load_l[3])
-
+        if len(self.load_sum_l) >= self.maxnum:
+            self.load_sum_l.pop(0)
+        self.load_sum_l.append(self.load_l[0] + self.load_l[1] + self.load_l[2] + self.load_l[3])
 
         if(self.online > 3 ):
             # Process Big CPU Freq List
@@ -120,35 +106,23 @@ class cpuinfo:
 
             # Process B CPU Load List
             self.load_b = self.get_load_big()
-            if len(self.load_b4) >= self.maxnum:
-                self.load_b4.pop(0)
-                self.load_b5.pop(0)
-                self.load_b6.pop(0)
-                self.load_b7.pop(0)
-            self.load_b4.append(self.load_b[0])
-            self.load_b5.append(self.load_b[1])
-            self.load_b6.append(self.load_b[2])
-            self.load_b7.append(self.load_b[3])
+            if len(self.load_sum_b) >= self.maxnum:
+                self.load_sum_b.pop(0)
+            self.load_sum_b.append(self.load_b[0] + self.load_b[1] + self.load_b[2] + self.load_b[3])
         else:
             if len(self.freq_b) >= self.maxnum:
                 self.freq_b.pop(0)
             self.freq_b.append(0)
 
             self.load_b = [0, 0, 0, 0]
-            if len(self.load_b4) >= self.maxnum:
-                self.load_b4.pop(0)
-                self.load_b5.pop(0)
-                self.load_b6.pop(0)
-                self.load_b7.pop(0)
-            self.load_b4.append(self.load_b[0])
-            self.load_b5.append(self.load_b[1])
-            self.load_b6.append(self.load_b[2])
-            self.load_b7.append(self.load_b[3])
+            if len(self.load_sum_b) >= self.maxnum:
+                self.load_sum_b.pop(0)
+            self.load_sum_b.append(0)
 
         #CPU All Info
         cinfo = [self.online, self.freq_l, self.load_l, self.freq_b, self.load_b]
 
-        print cinfo
+        #print cinfo
 
         #self.write(cinfo)
 
@@ -161,55 +135,32 @@ class cpuinfo:
 cpuinfo_g = 0 #save cpuinfo
 
 fig = plt.figure()
-ax1 = fig.add_subplot(2, 1, 1, xlim=(0, 40), ylim=(0, 100))
-ax2 = fig.add_subplot(2, 1, 2, xlim=(0, 40), ylim=(0, 2500000))
+ax1 = fig.add_subplot(2, 1, 1, xlim=(0, 50), ylim=(0, 400))
+ax2 = fig.add_subplot(2, 1, 2, xlim=(0, 50), ylim=(0, 2500000))
 
-load_l0, = ax1.plot([], [], lw=2)
-load_l1, = ax1.plot([], [], lw=2)
-load_l2, = ax1.plot([], [], lw=2)
-load_l3, = ax1.plot([], [], lw=2)
-
-load_b4, = ax1.plot([], [], lw=2)
-load_b5, = ax1.plot([], [], lw=2)
-load_b6, = ax1.plot([], [], lw=2)
-load_b7, = ax1.plot([], [], lw=2)
-
+load_sum_l, = ax1.plot([], [], lw=2)
+load_sum_b, = ax1.plot([], [], lw=2)
 freq_l, = ax2.plot([], [], lw=2)
 freq_b, = ax2.plot([], [], lw=2)
 
 def init():
-    load_l0.set_data([], [])
-    load_l1.set_data([], [])
-    load_l2.set_data([], [])
-    load_l3.set_data([], [])
-
-    load_b4.set_data([], [])
-    load_b5.set_data([], [])
-    load_b6.set_data([], [])
-    load_b7.set_data([], [])
-
+    load_sum_l.set_data([], [])
+    load_sum_b.set_data([], [])
     freq_l.set_data([], [])
     freq_b.set_data([], [])
 
-    return load_l0, load_l1, load_l2, load_l3, load_b4, load_b5, load_b6, load_b7, freq_l, freq_b
+    return load_sum_l, load_sum_b, freq_l, freq_b
 
 def animate(cpu):
-    x = range(40)
+    x = range(50)
     cpuinfo_g = cpuinfo()
-    load_l0.set_data(x, cpuinfo_g.load_l0)
-    load_l1.set_data(x, cpuinfo_g.load_l1)
-    load_l2.set_data(x, cpuinfo_g.load_l2)
-    load_l3.set_data(x, cpuinfo_g.load_l3)
-
-    load_b4.set_data(x, cpuinfo_g.load_b4)
-    load_b5.set_data(x, cpuinfo_g.load_b5)
-    load_b6.set_data(x, cpuinfo_g.load_b6)
-    load_b7.set_data(x, cpuinfo_g.load_b7)
+    load_sum_l.set_data(x, cpuinfo_g.load_sum_l)
+    load_sum_b.set_data(x, cpuinfo_g.load_sum_b)
 
     freq_l.set_data(x, cpuinfo_g.freq_l)
     freq_b.set_data(x, cpuinfo_g.freq_b)
 
-    return load_l0, load_l1, load_l2, load_l3, load_b4, load_b5, load_b6, load_b7, freq_l, freq_b
+    return load_sum_l, load_sum_b, freq_l, freq_b
 
 def load_show():
     am = animation.FuncAnimation(fig, animate, init_func=init, frames=50, interval=1/100)
