@@ -189,6 +189,7 @@ def main():
     update.start()
 
     load_show()
+    update.join()
 
     time.sleep(100)
 
