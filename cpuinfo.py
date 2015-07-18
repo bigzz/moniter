@@ -36,6 +36,8 @@ class cpuinfo:
 
     adb = ADB()
     adb.set_adb_path('/home/bigzhang/Android/Sdk/platform-tools/adb')
+    adb.get_devices()
+    adb.set_target_device('123456789ABC')
 
     def __init__(self):
         self.online = 0
@@ -140,10 +142,10 @@ fig = plt.figure()
 ax1 = fig.add_subplot(2, 1, 1, xlim=(0, 50), ylim=(0, 400))
 ax2 = fig.add_subplot(2, 1, 2, xlim=(0, 50), ylim=(0, 2500000))
 
-load_sum_l, = ax1.plot([], [], lw=2)
-load_sum_b, = ax1.plot([], [], lw=2)
-freq_l, = ax2.plot([], [], lw=2)
-freq_b, = ax2.plot([], [], lw=2)
+load_sum_l, = ax1.plot([], [], lw=1)
+load_sum_b, = ax1.plot([], [], lw=1)
+freq_l, = ax2.plot([], [], lw=1)
+freq_b, = ax2.plot([], [], lw=1)
 
 def init():
     load_sum_l.set_data([], [])
@@ -157,19 +159,31 @@ def animate(cpu):
     x = range(50)
     cpuinfo_g = cpuinfo()
 
-    y = cpuinfo_g.load_sum_l
+    y_load_l = cpuinfo_g.load_sum_l
+    y_load_b = cpuinfo_g.load_sum_b
+    y_freq_l = cpuinfo_g.freq_l
+    y_freq_b = cpuinfo_g.freq_b
+
     x_sm = np.array(x)
-    y_sm = np.array(y)
+    y_sm_ll = np.array(y_load_l)
+    y_sm_lb = np.array(y_load_b)
+    y_sm_fl = np.array(y_freq_l)
+    y_sm_fb = np.array(y_freq_b)
 
     x_smooth = np.linspace(x_sm.min(), x_sm.max(), 200)
-    y_smooth = spline(x, y, x_smooth)
+    y_smooth_load_l = spline(x, y_sm_ll, x_smooth)
+    y_smooth_load_b = spline(x, y_sm_lb, x_smooth)
+
+    y_smooth_freq_l = spline(x, y_sm_fl, x_smooth)
+    y_smooth_freq_b = spline(x, y_sm_fb, x_smooth)
+
 
     cpulock.acquire()
-    load_sum_l.set_data(x_smooth, y_smooth)
-    load_sum_b.set_data(x, cpuinfo_g.load_sum_b)
+    load_sum_l.set_data(x_smooth, y_smooth_load_l)
+    load_sum_b.set_data(x_smooth, y_smooth_load_b)
 
-    freq_l.set_data(x, cpuinfo_g.freq_l)
-    freq_b.set_data(x, cpuinfo_g.freq_b)
+    freq_l.set_data(x_smooth, y_smooth_freq_l)
+    freq_b.set_data(x_smooth, y_smooth_freq_b)
     cpulock.release()
 
     return load_sum_l, load_sum_b, freq_l, freq_b
