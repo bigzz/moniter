@@ -45,9 +45,14 @@ class cpuinfo:
     def get_online_cpu(self):
         online_cpu_cmd = 'cat ' + online_cpu_path
         tmp = self.adb.shell_command(online_cpu_cmd)
+
+        #0-3  or 0
         #online = re.findall(r"\d+\.?\d+", tmp)
-        online = tmp[2]
-        return string.atoi(online)
+        if tmp != '0\r\n':
+            online = tmp[2]
+            return string.atoi(online)
+        else:
+            return 0
 
     def get_freq_little(self):
         freq_little_cmd = 'cat ' + freq_little_path
