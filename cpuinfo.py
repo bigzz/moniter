@@ -10,6 +10,8 @@ import time
 import threading
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import numpy as np
+from scipy.interpolate import spline
 
 online_cpu_path='/sys/devices/system/cpu/online'
 
@@ -155,8 +157,15 @@ def animate(cpu):
     x = range(50)
     cpuinfo_g = cpuinfo()
 
+    y = cpuinfo_g.load_sum_l
+    x_sm = np.array(x)
+    y_sm = np.array(y)
+
+    x_smooth = np.linspace(x_sm.min(), x_sm.max(), 200)
+    y_smooth = spline(x, y, x_smooth)
+
     cpulock.acquire()
-    load_sum_l.set_data(x, cpuinfo_g.load_sum_l)
+    load_sum_l.set_data(x_smooth, y_smooth)
     load_sum_b.set_data(x, cpuinfo_g.load_sum_b)
 
     freq_l.set_data(x, cpuinfo_g.freq_l)
@@ -191,7 +200,7 @@ def main():
     load_show()
     update.join()
 
-    time.sleep(100)
+    time.sleep(10000)
 
 if __name__ == "__main__":
     main()
