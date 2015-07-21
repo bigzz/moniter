@@ -4,6 +4,10 @@ from pyadb import ADB
 import re
 import threading
 import time
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+from scipy.interpolate import spline
 
 power_gpu_path='/sys/bus/platform/devices/14ac0000.mali/power_state'
 freq_gpu_path='/sys/bus/platform/devices/14ac0000.mali/clock'
@@ -38,8 +42,59 @@ class gpuinfo:
         return map(int, load)
 
     def update(self):
-        self.get_freq_gpu()
-        self.get_load_gpu()
+        if len(self.gpu_load) >= self.maxnum:
+            self.gpu_load.pop(0)
+        self.gpu_load.append(self.get_load_gpu()[0])
+
+        if len(self.gpu_freq) >= self.maxnum:
+            self.gpu_freq.pop(0)
+        self.gpu_freq.append(self.get_freq_gpu()[0])
+
+        print self.gpu_load
+        print self.gpu_freq
+
+gpuinfo_g = 0
+
+fig = plt.figure()
+ax1 = fig.add_subplot(2, 1, 1, xlim=(0, 50), ylim=(0, 100))
+ax2 = fig.add_subplot(2, 1, 2, xlim=(0, 50), ylim=(0, 1000))
+
+load, = ax1.plot([], [], lw=1)
+freq, = ax2.plot([], [], lw=1)
+
+
+def init():
+    load.set_data([], [])
+    freq.set_data([], [])
+
+    return load, freq
+
+def animate(gpu):
+    x = range(50)
+    gpuinfo_g = gpuinfo()
+
+    gpulock.acquire()
+    y_load = gpuinfo_g.gpu_load
+    y_freq = gpuinfo_g.gpu_freq
+
+    x_sm = np.array(x)
+    y_sm_l = np.array(y_load)
+    y_sm_f = np.array(y_freq)
+
+    x_smooth = np.linspace(x_sm.min(), x_sm.max(), 200)
+    y_smooth_l = spline(x, y_sm_l, x_smooth)
+    y_smooth_f = spline(x, y_sm_f, x_smooth)
+
+    load.set_data(x_smooth, y_smooth_l)
+    freq.set_data(x_smooth, y_smooth_f)
+    gpulock.release()
+
+    return load, freq
+
+def load_show():
+    am = animation.FuncAnimation(fig, animate, init_func=init, frames=50, interval=1)
+    plt.show()
+
 
 gpulock = threading.RLock()
 
@@ -59,6 +114,9 @@ def main():
     gpuin = gpuinfo()
     update = update_thread(gpuin, 1)
     update.start()
+
+    load_show()
+    update.join()
 
     time.sleep(10000)
 
